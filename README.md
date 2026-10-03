@@ -74,6 +74,18 @@ Notes:
 
 ---
 
+## Demo: predict a molecule
+
+```bash
+python experiments/demo_predict.py --dataset BBBP --smiles "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"   # caffeine
+python experiments/demo_predict.py --dataset BBBP --verify    # reproduces the reported test AUC
+```
+
+Loads a trained checkpoint and predicts on CPU in ~10 s (`--dataset BBBP` or `BACE`).
+See [DEMO.md](DEMO.md) for a full walkthrough.
+
+---
+
 ## Repository layout
 
 ```
@@ -91,6 +103,7 @@ experiments/
   train_dataset_v7.py  dropout / weight-decay sweep
   train_dataset_v8.py  5-seed BBBP baseline (official BBBP number)
   train_dataset_v9.py  5-seed baseline for BACE / ClinTox / Tox21
+  demo_predict.py      predict any SMILES with a trained checkpoint (CPU)
 models/         trained checkpoints (.pth)
 results/        per-run CSVs, training logs, predictions and diagnostic plots
 notebooks/      exploratory notebooks
