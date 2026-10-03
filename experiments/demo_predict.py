@@ -15,6 +15,7 @@ import io
 import os
 import sys
 import tempfile
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -55,6 +56,8 @@ DATASETS = {
     },
 }
 
+VOCAB_NAMES = ("atom_dict", "bond_dict", "fingerprint_dict", "edge_dict")
+
 
 def quiet(fn, *args):
     """preprocess.create_dataset prints every filename / failed SMILES — hide that."""
@@ -62,64 +65,89 @@ def quiet(fn, *args):
         return fn(*args)
 
 
-def load_split(name, split):
-    return quiet(pp.create_dataset, str(DATASET_DIR / f"{name}_{split}.txt"), "", "")
+class Predictor:
+    """A trained checkpoint plus the fingerprint vocabulary it was trained with.
 
+    preprocess keeps its vocabulary in module-level dicts that grow as files are read,
+    and the checkpoint does not store it. Re-reading train, valid, test in the same
+    order as training rebuilds exactly the same fingerprint ids. Each Predictor owns its
+    own dicts and swaps them into preprocess while it works, so BBBP and BACE predictors
+    can live in the same process without mixing vocabularies."""
 
-def build_vocabulary(name):
-    """The fingerprint vocabulary is not stored in the checkpoint; preprocess builds it
-    incrementally as files are read. Re-reading train, valid, test in the same order as
-    training reproduces exactly the same fingerprint ids the model was trained on."""
-    load_split(name, "train")
-    load_split(name, "valid")
-    return load_split(name, "test")
+    def __init__(self, name):
+        self.name = name
+        self.cfg = DATASETS[name]
+        self.vocab = tuple(defaultdict(self._counter(n)) for n in VOCAB_NAMES)
+        with self._active():
+            quiet(pp.create_dataset, str(DATASET_DIR / f"{name}_train.txt"), "", "")
+            quiet(pp.create_dataset, str(DATASET_DIR / f"{name}_valid.txt"), "", "")
+            self.test_set = quiet(pp.create_dataset, str(DATASET_DIR / f"{name}_test.txt"), "", "")
+        self.model = MolecularGraphNeuralNetwork(N, DIM, LAYER_HIDDEN, LAYER_OUTPUT, DROPOUT)
+        self.model.load_state_dict(torch.load(self.cfg["checkpoint"], map_location="cpu"))
+        self.model.eval()
 
+    @staticmethod
+    def _counter(attr):
+        # same behaviour as preprocess's own factories: next unused id
+        return lambda: len(getattr(pp, attr))
 
-def featurise(smiles_list):
-    """Turn new SMILES into model inputs. create_dataset skips its first line, so a
-    header line is written first; the label column is a dummy (0)."""
-    with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
-        f.write("smiles\tlabel\n")
-        for s in smiles_list:
-            f.write(f"{s}\t0\n")
-        path = f.name
-    try:
-        data = quiet(pp.create_dataset, path, "", "")
-    finally:
-        os.remove(path)
-    return {d[0]: d for d in data}  # invalid SMILES are skipped by preprocess
+    @contextlib.contextmanager
+    def _active(self):
+        saved = tuple(getattr(pp, n) for n in VOCAB_NAMES)
+        for n, d in zip(VOCAB_NAMES, self.vocab):
+            setattr(pp, n, d)
+        try:
+            yield
+        finally:
+            for n, d in zip(VOCAB_NAMES, saved):
+                setattr(pp, n, d)
 
+    def featurise(self, smiles_list):
+        """New SMILES -> model inputs. create_dataset skips its first line, so a header
+        is written first; the label column is a dummy (0). Invalid SMILES are dropped."""
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
+            f.write("smiles\tlabel\n")
+            for s in smiles_list:
+                f.write(f"{s}\t0\n")
+            path = f.name
+        try:
+            with self._active():
+                data = quiet(pp.create_dataset, path, "", "")
+        finally:
+            os.remove(path)
+        return {d[0]: d for d in data}
 
-def load_model(name):
-    model = MolecularGraphNeuralNetwork(N, DIM, LAYER_HIDDEN, LAYER_OUTPUT, DROPOUT)
-    state = torch.load(DATASETS[name]["checkpoint"], map_location="cpu")
-    model.load_state_dict(state)
-    model.eval()
-    return model
+    @torch.no_grad()
+    def _scores(self, molecules, batch_size=8):
+        """Probability of the positive class, computed the fixed way (raw logits -> softmax)."""
+        probs = []
+        for i in range(0, len(molecules), batch_size):
+            batch = list(zip(*molecules[i:i + batch_size]))
+            _, vectors = self.model.gnn(batch[:-1])
+            for l in range(self.model.layer_output):
+                vectors = torch.relu(self.model.W_output[l](vectors))
+            logits = self.model.W_property(vectors)
+            probs.extend(torch.softmax(logits, dim=1)[:, 1].tolist())
+        return probs
 
+    def predict(self, smiles_list):
+        """{smiles: probability or None if invalid}"""
+        feats = self.featurise(smiles_list)
+        valid = [s for s in smiles_list if s in feats]
+        probs = dict(zip(valid, self._scores([feats[s] for s in valid])))
+        return {s: probs.get(s) for s in smiles_list}
 
-@torch.no_grad()
-def predict(model, molecules, batch_size=8):
-    """Probability of the positive class, computed the fixed way (raw logits -> softmax)."""
-    probs = []
-    for i in range(0, len(molecules), batch_size):
-        batch = list(zip(*molecules[i:i + batch_size]))
-        _, vectors = model.gnn(batch[:-1])
-        for l in range(model.layer_output):
-            vectors = torch.relu(model.W_output[l](vectors))
-        logits = model.W_property(vectors)
-        probs.extend(torch.softmax(logits, dim=1)[:, 1].tolist())
-    return probs
+    def verdict(self, p):
+        return self.cfg["positive"] if p > THRESHOLD else self.cfg["negative"]
 
-
-def verify(name, model, test_set):
-    probs = np.array(predict(model, test_set))
-    labels = np.array([d[-1].item() for d in test_set])
-    saved = pd.read_csv(DATASETS[name]["saved_predictions"]).iloc[:, 2].to_numpy()
-    print(f"Test molecules        : {len(test_set)}")
-    print(f"Test ROC-AUC (now)    : {roc_auc_score(labels, probs):.4f}")
-    print(f"Test ROC-AUC (saved)  : {roc_auc_score(labels, saved):.4f}")
-    print(f"Max |score difference|: {np.abs(probs - saved).max():.2e}")
+    def verify(self):
+        probs = np.array(self._scores(self.test_set))
+        labels = np.array([d[-1].item() for d in self.test_set])
+        saved = pd.read_csv(self.cfg["saved_predictions"]).iloc[:, 2].to_numpy()
+        return {"n": len(self.test_set),
+                "auc_now": roc_auc_score(labels, probs),
+                "auc_saved": roc_auc_score(labels, saved),
+                "max_diff": float(np.abs(probs - saved).max())}
 
 
 def main():
@@ -131,29 +159,25 @@ def main():
     if not args.smiles and not args.verify:
         ap.error("give --smiles and/or --verify")
 
-    cfg = DATASETS[args.dataset]
+    pred = Predictor(args.dataset)
     print(f"Graph2Drug | D-GCAN (fixed) | dataset: {args.dataset} | "
-          f"checkpoint: {cfg['checkpoint'].name}\n")
-    test_set = build_vocabulary(args.dataset)
-    model = load_model(args.dataset)
+          f"checkpoint: {pred.cfg['checkpoint'].name}\n")
 
     if args.verify:
-        verify(args.dataset, model, test_set)
-        print()
+        v = pred.verify()
+        print(f"Test molecules        : {v['n']}")
+        print(f"Test ROC-AUC (now)    : {v['auc_now']:.4f}")
+        print(f"Test ROC-AUC (saved)  : {v['auc_saved']:.4f}")
+        print(f"Max |score difference|: {v['max_diff']:.2e}\n")
 
     if args.smiles:
-        feats = featurise(args.smiles)
-        valid = [s for s in args.smiles if s in feats]
-        probs = dict(zip(valid, predict(model, [feats[s] for s in valid])))
-        for s in args.smiles:
+        for s, p in pred.predict(args.smiles).items():
             print(f"SMILES      : {s}")
-            if s not in probs:
+            if p is None:
                 print("Result      : invalid SMILES (RDKit could not parse it)\n")
                 continue
-            p = probs[s]
-            verdict = cfg["positive"] if p > THRESHOLD else cfg["negative"]
             print(f"Probability : {p:.4f}")
-            print(f"Prediction  : {verdict}\n")
+            print(f"Prediction  : {pred.verdict(p)}\n")
 
 
 if __name__ == "__main__":

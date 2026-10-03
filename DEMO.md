@@ -16,10 +16,27 @@ If setting up on a new machine:
 git clone https://github.com/Pramodsai29/graph2drug.git && cd graph2drug
 git clone https://github.com/JinYSun/D-GCAN.git vendor/D-GCAN
 python3 -m venv .venv && source .venv/bin/activate
-pip install torch rdkit scikit-learn pandas matplotlib
+pip install -r requirements.txt
 ```
 
 ---
+
+## Web demo (recommended for the review)
+
+Double-click **`start_demo.command`** in the `graph2drug` folder (or run
+`streamlit run app.py`). The app opens at http://localhost:8501 in your browser.
+Wait ~15 s on first load while the trained model loads. Keep the Terminal window open
+during the demo; close it to stop the app.
+
+| Tab | What to show |
+|---|---|
+| 🔬 Predict | Pick BBBP or BACE, choose an example molecule — the structure is drawn and the model's probability and verdict appear. Type any SMILES a reviewer suggests. |
+| ⚙️ How it works | Architecture diagram + the bug (sigmoid then cross-entropy) next to our fix. |
+| 📊 Results | Original 0.466 vs fixed scores, AUC chart, and the training curve where the original flat-lines at 0.5. |
+| ✅ Model check | Click **Run check** — re-scores the whole test set live and matches the reported AUC exactly. |
+
+Suggested order: Results (the problem and the payoff) → How it works (the fix) →
+Predict (live) → Model check (proof). The terminal commands below are a backup.
 
 ## 1. The problem (2 min)
 

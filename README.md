@@ -76,6 +76,8 @@ Notes:
 
 ## Demo: predict a molecule
 
+Web app (runs locally): `streamlit run app.py` → http://localhost:8501
+
 ```bash
 python experiments/demo_predict.py --dataset BBBP --smiles "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"   # caffeine
 python experiments/demo_predict.py --dataset BBBP --verify    # reproduces the reported test AUC
