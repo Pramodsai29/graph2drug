@@ -15,6 +15,7 @@ import io
 import os
 import sys
 import tempfile
+import threading
 from collections import defaultdict
 from pathlib import Path
 
@@ -57,6 +58,9 @@ DATASETS = {
 }
 
 VOCAB_NAMES = ("atom_dict", "bond_dict", "fingerprint_dict", "edge_dict")
+# preprocess's vocabulary is module-global state; the web app serves several sessions
+# on different threads, so every swap-in/use/swap-out must happen under one lock.
+_VOCAB_LOCK = threading.RLock()
 
 
 def quiet(fn, *args):
@@ -93,14 +97,15 @@ class Predictor:
 
     @contextlib.contextmanager
     def _active(self):
-        saved = tuple(getattr(pp, n) for n in VOCAB_NAMES)
-        for n, d in zip(VOCAB_NAMES, self.vocab):
-            setattr(pp, n, d)
-        try:
-            yield
-        finally:
-            for n, d in zip(VOCAB_NAMES, saved):
+        with _VOCAB_LOCK:
+            saved = tuple(getattr(pp, n) for n in VOCAB_NAMES)
+            for n, d in zip(VOCAB_NAMES, self.vocab):
                 setattr(pp, n, d)
+            try:
+                yield
+            finally:
+                for n, d in zip(VOCAB_NAMES, saved):
+                    setattr(pp, n, d)
 
     def featurise(self, smiles_list):
         """New SMILES -> model inputs. create_dataset skips its first line, so a header
