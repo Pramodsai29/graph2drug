@@ -1,0 +1,4 @@
+dataset,raw_rows,after_dropna,after_fragment_filter,invalid_smiles_removed,after_dedup,neg,pos,train,valid,test
+BACE,1513,1513,1513,0,1513,822,691,1210,151,152
+ClinTox,1484,1484,1470,4,1447,1358,89,1157,145,145
+Tox21,7831,5810,5641,5,5636,4739,897,4508,564,564

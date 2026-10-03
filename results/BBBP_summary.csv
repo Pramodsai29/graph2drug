@@ -1,0 +1,2 @@
+Dataset,Epochs,Best Validation AUC,Final Test AUC,Final Test Accuracy,Final Test Precision,Final Test Recall,Final Test F1,Final Test MCC,Final Test Specificity
+BBBP,140,0.5,0.4953382739660531,0.5136612021857924,0.5136612021857924,1.0,0.6787003610108303,0.0,0.0

@@ -1,0 +1,4 @@
+smiles,orig_logit1,pert_logit1,delta_logit1,orig_sigmoid1,pert_sigmoid1
+Nc1nc(NC2CC2)c3ncn([C@@H]4C[C@H](CO)C=C4)c3n1,32.124477,32.071163,0.05331421,1.0,1.0
+c1(c(cc2n(ncc2c1)CCN)Cl)Cl,20.38043,20.38658,-0.006149292,1.0,1.0
+c1c2CCOc2c(cc1OC)CN[C@@H]1CCCN[C@H]1c1ccccc1,40.88531,40.90715,-0.021839142,1.0,1.0

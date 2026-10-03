@@ -1,0 +1,71 @@
+{
+    "molecule_105": {
+        "score": 0.5275,
+        "type": "Uncertain Prediction",
+        "attention_top_nodes": [
+            6,
+            9,
+            12,
+            3,
+            4,
+            11,
+            13,
+            2,
+            5,
+            10
+        ],
+        "gnnexplainer_top_nodes": [
+            9,
+            6,
+            7,
+            8,
+            5,
+            10,
+            14,
+            1,
+            20,
+            19
+        ],
+        "common_nodes": [
+            6,
+            9,
+            5,
+            10
+        ]
+    },
+    "molecule_106": {
+        "score": 1.3e-06,
+        "type": "False Negative",
+        "attention_top_nodes": [
+            0,
+            17,
+            5,
+            12,
+            11,
+            10,
+            13,
+            8,
+            1,
+            20
+        ],
+        "gnnexplainer_top_nodes": [
+            5,
+            17,
+            1,
+            20,
+            8,
+            30,
+            25,
+            23,
+            22,
+            21
+        ],
+        "common_nodes": [
+            5,
+            17,
+            1,
+            20,
+            8
+        ]
+    }
+}

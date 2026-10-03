@@ -1,0 +1,2 @@
+Dataset,Epochs,Note,Best Validation AUC,Final Test AUC,Final Test Accuracy,Final Test Precision,Final Test Recall,Final Test F1,Final Test MCC,Final Test Specificity
+BBBP,10,SMOKE TEST - short run to validate the sigmoid-before-cross_entropy fix,0.9568817204301076,0.597418120965814,0.5355191256830601,0.5260115606936416,0.9680851063829787,0.6816479400749064,0.10277672524049944,0.07865168539325842

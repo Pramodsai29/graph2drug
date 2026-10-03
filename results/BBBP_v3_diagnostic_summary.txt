@@ -1,0 +1,16 @@
+======================================================================
+V3 DIAGNOSTIC SUMMARY
+======================================================================
+
+CODE-LEVEL OBSERVATION (DGCAN.py, MolecularGraphNeuralNetwork.mlp/forward_classifier):
+  mlp() applies torch.sigmoid() to the 2-class output of W_property,
+  then forward_classifier() passes that sigmoid output directly into
+  F.cross_entropy(), which internally applies log_softmax. This means
+  the loss is computed on softmax(sigmoid(logits)) instead of the raw
+  logits cross_entropy expects — a compounded/incorrect nonlinearity 
+  stack. This is upstream code (vendor/D-GCAN), not something we wrote.
+
+Logit class1 range on sampled test molecules: [18.913, 59.943]
+Final layer bias: class0=-0.0216, class1=0.0192 (diff=0.0408)
+
+See per-step CSV/PNG outputs in results/ for full numeric evidence.

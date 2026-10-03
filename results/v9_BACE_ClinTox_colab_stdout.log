@@ -1,0 +1,190 @@
+== BACE Sat Oct  3 02:40:45 IST 2026
+
+[colab] A new version of Colab CLI is available: 0.7.4 (current: 0.6.0)
+
+
+[colab] A new version of Colab CLI is available: 0.7.4 (current: 0.6.0)
+
+======================================================================
+D-GCAN v9 — Multi-seed BACE baseline (5 seeds x 140 epochs)
+======================================================================
+Device: cuda
+
+Loading datasets...
+Train: 1209 Valid: 150 Test: 151
+
+======================================================================
+SEED 42
+======================================================================
+  epoch 035/140 | valid_auc=0.7105
+  epoch 070/140 | valid_auc=0.6939
+  epoch 105/140 | valid_auc=0.7110
+  epoch 140/140 | valid_auc=0.6714
+
+  -> seed 42: best_valid_auc=0.7412 | test_auc=0.7991 | test_mcc=0.4822 | test_specificity=0.6500 | time=8.25 min
+
+======================================================================
+SEED 43
+======================================================================
+  epoch 035/140 | valid_auc=0.6946
+  epoch 070/140 | valid_auc=0.6858
+  epoch 105/140 | valid_auc=0.7127
+  epoch 140/140 | valid_auc=0.7166
+
+  -> seed 43: best_valid_auc=0.7491 | test_auc=0.7971 | test_mcc=0.4973 | test_specificity=0.6667 | time=8.26 min
+
+======================================================================
+SEED 44
+======================================================================
+  epoch 035/140 | valid_auc=0.6972
+  epoch 070/140 | valid_auc=0.7011
+  epoch 105/140 | valid_auc=0.6901
+  epoch 140/140 | valid_auc=0.7155
+
+  -> seed 44: best_valid_auc=0.7413 | test_auc=0.8106 | test_mcc=0.5278 | test_specificity=0.7667 | time=8.26 min
+
+======================================================================
+SEED 45
+======================================================================
+  epoch 035/140 | valid_auc=0.6430
+  epoch 070/140 | valid_auc=0.7190
+  epoch 105/140 | valid_auc=0.7220
+  epoch 140/140 | valid_auc=0.7426
+
+  -> seed 45: best_valid_auc=0.7482 | test_auc=0.7608 | test_mcc=0.4064 | test_specificity=0.7667 | time=8.25 min
+
+======================================================================
+SEED 46
+======================================================================
+  epoch 035/140 | valid_auc=0.6822
+  epoch 070/140 | valid_auc=0.6921
+  epoch 105/140 | valid_auc=0.7287
+  epoch 140/140 | valid_auc=0.7098
+
+  -> seed 46: best_valid_auc=0.7419 | test_auc=0.8013 | test_mcc=0.4712 | test_specificity=0.7667 | time=8.29 min
+
+======================================================================
+V9 MULTI-SEED RESULTS — BACE
+======================================================================
+ seed  best_valid_auc  best_epoch  test_pr_auc  test_balanced_accuracy  test_auc  test_accuracy  test_precision  test_recall  test_f1  test_mcc  test_specificity  minutes
+   42        0.741162          50     0.800977                0.737088  0.799084       0.754967        0.781250     0.824176 0.802139  0.482191          0.650000 8.253974
+   43        0.749098         110     0.817464                0.745421  0.797070       0.761589        0.789474     0.824176 0.806452  0.497259          0.666667 8.256876
+   44        0.741342         112     0.837528                0.767949  0.810623       0.768212        0.833333     0.769231 0.800000  0.527838          0.766667 8.264609
+   45        0.748196         101     0.794123                0.707509  0.760806       0.695364        0.808219     0.648352 0.719512  0.406401          0.766667 8.252328
+   46        0.741883         138     0.830653                0.740476  0.801282       0.735099        0.822785     0.714286 0.764706  0.471214          0.766667 8.294789
+
+----------------------------------------------------------------------
+MEAN +/- STD ACROSS SEEDS (report this, not a single-seed number)
+----------------------------------------------------------------------
+test_auc        : 0.7938 +/- 0.0191
+test_pr_auc     : 0.8161 +/- 0.0186
+test_balanced_accuracy: 0.7397 +/- 0.0216
+test_accuracy   : 0.7430 +/- 0.0294
+test_precision  : 0.8070 +/- 0.0219
+test_recall     : 0.7560 +/- 0.0755
+test_f1         : 0.7786 +/- 0.0370
+test_mcc        : 0.4770 +/- 0.0448
+test_specificity: 0.7233 +/- 0.0596
+
+Total time for 5 seeds: 41.43 minutes
+== ClinTox Sat Oct  3 03:22:22 IST 2026
+
+[colab] A new version of Colab CLI is available: 0.7.4 (current: 0.6.0)
+
+
+[colab] A new version of Colab CLI is available: 0.7.4 (current: 0.6.0)
+
+======================================================================
+D-GCAN v9 — Multi-seed ClinTox baseline (5 seeds x 140 epochs)
+======================================================================
+Device: cuda
+
+Loading datasets...
+Train: 1156 Valid: 144 Test: 144
+
+======================================================================
+SEED 42
+======================================================================
+  epoch 035/140 | valid_auc=0.7331
+  epoch 070/140 | valid_auc=0.7362
+  epoch 105/140 | valid_auc=0.9030
+  epoch 140/140 | valid_auc=0.7737
+
+  -> seed 42: best_valid_auc=0.9030 | test_auc=0.8769 | test_mcc=0.3778 | test_specificity=0.9030 | time=5.98 min
+
+======================================================================
+SEED 43
+======================================================================
+  epoch 035/140 | valid_auc=0.7497
+  epoch 070/140 | valid_auc=0.8519
+  epoch 105/140 | valid_auc=0.8154
+  epoch 140/140 | valid_auc=0.8467
+
+  -> seed 43: best_valid_auc=0.9218 | test_auc=0.8455 | test_mcc=0.3909 | test_specificity=0.8731 | time=5.98 min
+
+======================================================================
+SEED 44
+======================================================================
+  epoch 035/140 | valid_auc=0.8311
+  epoch 070/140 | valid_auc=0.8634
+  epoch 105/140 | valid_auc=0.8895
+  epoch 140/140 | valid_auc=0.8561
+
+  -> seed 44: best_valid_auc=0.9187 | test_auc=0.8022 | test_mcc=0.2354 | test_specificity=0.8507 | time=5.99 min
+
+======================================================================
+SEED 45
+======================================================================
+  epoch 035/140 | valid_auc=0.7216
+  epoch 070/140 | valid_auc=0.8332
+  epoch 105/140 | valid_auc=0.8311
+  epoch 140/140 | valid_auc=0.8665
+
+  -> seed 45: best_valid_auc=0.9385 | test_auc=0.8575 | test_mcc=0.3396 | test_specificity=0.8806 | time=5.97 min
+
+======================================================================
+SEED 46
+======================================================================
+  epoch 035/140 | valid_auc=0.8092
+  epoch 070/140 | valid_auc=0.7977
+  epoch 105/140 | valid_auc=0.8259
+  epoch 140/140 | valid_auc=0.7852
+
+  -> seed 46: best_valid_auc=0.9051 | test_auc=0.8276 | test_mcc=0.3139 | test_specificity=0.8134 | time=5.96 min
+
+======================================================================
+V9 MULTI-SEED RESULTS — ClinTox
+======================================================================
+ seed  best_valid_auc  best_epoch  test_pr_auc  test_balanced_accuracy  test_auc  test_accuracy  test_precision  test_recall  test_f1  test_mcc  test_specificity  minutes
+   42        0.903024         105     0.424985                0.751493  0.876866       0.881944        0.315789          0.6 0.413793  0.377812          0.902985 5.983468
+   43        0.921794         111     0.256541                0.786567  0.845522       0.861111        0.291667          0.7 0.411765  0.390942          0.873134 5.976181
+   44        0.918665         115     0.364302                0.675373  0.802239       0.826389        0.200000          0.5 0.285714  0.235398          0.850746 5.993447
+   45        0.938478         107     0.381172                0.740299  0.857463       0.861111        0.272727          0.6 0.375000  0.339580          0.880597 5.971520
+   46        0.905109         121     0.277444                0.756716  0.827612       0.805556        0.218750          0.7 0.333333  0.313944          0.813433 5.956612
+
+----------------------------------------------------------------------
+MEAN +/- STD ACROSS SEEDS (report this, not a single-seed number)
+----------------------------------------------------------------------
+test_auc        : 0.8419 +/- 0.0285
+test_pr_auc     : 0.3409 +/- 0.0714
+test_balanced_accuracy: 0.7421 +/- 0.0410
+test_accuracy   : 0.8472 +/- 0.0307
+test_precision  : 0.2598 +/- 0.0489
+test_recall     : 0.6200 +/- 0.0837
+test_f1         : 0.3639 +/- 0.0547
+test_mcc        : 0.3315 +/- 0.0618
+test_specificity: 0.8642 +/- 0.0340
+
+Total time for 5 seeds: 29.89 minutes
+== Tox21 Sat Oct  3 03:52:33 IST 2026
+
+[colab] A new version of Colab CLI is available: 0.7.4 (current: 0.6.0)
+
+[colab] Session 'dgcan-v9' appears to be lost (404/401). Cleaning up.
+
+[colab] A new version of Colab CLI is available: 0.7.4 (current: 0.6.0)
+
+[colab] Session 'dgcan-v9' not found.
+ALL DONE Sat Oct  3 03:52:38 IST 2026
+
+[exited with code 0]

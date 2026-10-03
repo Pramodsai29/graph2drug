@@ -1,0 +1,17 @@
+
+Dataset: bRo5
+
+AUC: 0.9291
+ACC: 0.9305
+BACC: 0.9291
+Precision: 0.9028
+Recall: 0.9701
+F1: 0.9353
+MCC: 0.8631
+Specificity: 0.8880
+
+Model:
+GCN + GAT (D-GCAN)
+
+Parameters:
+311698

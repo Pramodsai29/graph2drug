@@ -1,0 +1,7 @@
+# upstream D-GCAN is cloned here at run time, not redistributed
+vendor/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store

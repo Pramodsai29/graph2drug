@@ -1,0 +1,50 @@
+{
+    "high_confidence_positive": {
+        "index": 0,
+        "score": 1.0,
+        "top_nodes": [
+            0,
+            6,
+            2,
+            3,
+            5,
+            10,
+            7,
+            17,
+            16,
+            23
+        ]
+    },
+    "false_negative": {
+        "index": 106,
+        "score": 1.3020331e-06,
+        "top_nodes": [
+            0,
+            17,
+            5,
+            12,
+            11,
+            10,
+            13,
+            8,
+            1,
+            20
+        ]
+    },
+    "borderline": {
+        "index": 105,
+        "score": 0.5275366,
+        "top_nodes": [
+            6,
+            9,
+            12,
+            3,
+            4,
+            11,
+            13,
+            2,
+            5,
+            10
+        ]
+    }
+}
