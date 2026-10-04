@@ -162,14 +162,15 @@ with tab_res:
 
     rows = [("BBBP", *mean_std(RESULTS / "BBBP_v8_multiseed_results.csv")),
             ("BACE", *mean_std(RESULTS / "BACE_v9_multiseed_results.csv")),
-            ("ClinTox", *mean_std(RESULTS / "ClinTox_v9_multiseed_results_recovered_from_log.csv"))]
+            ("ClinTox", *mean_std(RESULTS / "ClinTox_v9_multiseed_results.csv")),
+            ("Tox21", *mean_std(RESULTS / "Tox21_v9_multiseed_results.csv"))]
     res = pd.DataFrame(rows, columns=["Dataset", "mean", "std"])
     res["lo"], res["hi"] = res["mean"] - res["std"], res["mean"] + res["std"]
     res["label"] = res.apply(lambda r: f"{r['mean']:.3f} ± {r['std']:.3f}", axis=1)
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, *fixed_cols = st.columns(1 + len(rows))
     c1.metric("Original D-GCAN (BBBP)", "0.466", help="Test ROC-AUC before the fix")
-    for col, r in zip((c2, c3, c4), rows):
+    for col, r in zip(fixed_cols, rows):
         col.metric(f"Fixed — {r[0]}", f"{r[1]:.3f} ± {r[2]:.3f}")
     st.caption("Test ROC-AUC on scaffold splits, mean ± std over 5 training seeds. "
                "0.5 = random guessing, 1.0 = perfect.")

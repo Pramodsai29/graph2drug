@@ -56,7 +56,7 @@ Tox21 uses the single SR-MMP task; ClinTox uses `CT_TOX`.
 | BBBP | **0.6396 ± 0.0120** | — | — | 0.1213 ± 0.0371 | 0.1798 ± 0.0381 |
 | BACE | **0.7938 ± 0.0191** | 0.8161 ± 0.0186 | 0.7397 ± 0.0216 | 0.4770 ± 0.0448 | 0.7233 ± 0.0596 |
 | ClinTox (CT_TOX) | **0.8419 ± 0.0285** | 0.3409 ± 0.0714 | 0.7421 ± 0.0410 | 0.3315 ± 0.0618 | 0.8642 ± 0.0340 |
-| Tox21 (SR-MMP) | *pending* | | | | |
+| Tox21 (SR-MMP) | **0.8061 ± 0.0137** | 0.4835 ± 0.0272 | 0.7332 ± 0.0218 | 0.3944 ± 0.0384 | 0.7693 ± 0.0426 |
 
 Notes:
 - **Training is reproducible**: seed-to-seed std of test AUC (≈0.01–0.03) is
@@ -69,6 +69,8 @@ Notes:
   test ~0.79), so this is not a generic scaffold-split artefact.
 - **ClinTox is highly imbalanced** (10 positives in 144 test molecules), so its
   AUC is noisy; PR-AUC 0.34 is ~5× the 7% positive rate.
+- **Tox21 (SR-MMP) is imbalanced too** (19% positives in 563 test molecules);
+  PR-AUC 0.48 is ~2.5× the positive rate.
 - A dropout / weight-decay sweep (`train_dataset_v7.py`) found no robust
   improvement over the original hyperparameters.
 
@@ -139,7 +141,7 @@ git clone https://github.com/JinYSun/D-GCAN.git vendor/D-GCAN   # upstream model
   original Colab notebooks' code, kept unchanged for reference; they expect the
   project on a mounted Google Drive at `/content/drive/MyDrive/DGCAN_Project`.
 
-A full 5-seed run takes ~34 min (BBBP), ~41 min (BACE) and ~30 min (ClinTox)
+A full 5-seed run takes ~34 min (BBBP), ~41 min (BACE), ~30 min (ClinTox) and ~79 min (Tox21)
 on a T4 GPU.
 
 ---
@@ -149,7 +151,7 @@ on a T4 GPU.
 - [x] Diagnose and fix the D-GCAN training bug
 - [x] Multi-seed BBBP baseline
 - [x] BACE, ClinTox multi-seed baselines
-- [ ] Tox21 (SR-MMP) multi-seed baseline
+- [x] Tox21 (SR-MMP) multi-seed baseline
 - [ ] Random vs. scaffold split comparison
 - [ ] Architecture comparison (GCN / GAT / GraphSAGE / D-GCAN)
 - [ ] Ablations (GCN, GAT, fingerprint and attention components)
