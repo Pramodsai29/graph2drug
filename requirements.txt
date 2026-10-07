@@ -4,3 +4,5 @@ scikit-learn
 pandas
 matplotlib
 streamlit
+scipy
+torch_geometric

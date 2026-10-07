@@ -1,0 +1,6 @@
+  -> no_gat seed 42: best_valid_auc=0.9495 (epoch 8) | test_auc=0.6263 | test_mcc=0.2364 | time=3.41 min
+  -> no_gat seed 43: best_valid_auc=0.9528 (epoch 15) | test_auc=0.6431 | test_mcc=0.1635 | time=3.42 min
+  -> no_gat seed 44: best_valid_auc=0.9462 (epoch 6) | test_auc=0.6182 | test_mcc=0.1480 | time=3.47 min
+  -> no_gat seed 45: best_valid_auc=0.9570 (epoch 7) | test_auc=0.6263 | test_mcc=0.0901 | time=3.55 min
+  -> no_gat seed 46: best_valid_auc=0.9525 (epoch 58) | test_auc=0.6915 | test_mcc=0.2860 | time=3.66 min
+no_gat test_auc        : 0.6411 +/- 0.0296

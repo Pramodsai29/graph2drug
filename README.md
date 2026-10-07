@@ -6,9 +6,19 @@ reproduces D-GCAN, fixes a training bug in the original implementation, and
 evaluates it under a statistically sound multi-seed protocol on four
 MoleculeNet benchmarks: **BBBP, BACE, ClinTox and Tox21**.
 
-> Status: work in progress toward a conference paper. Results below are final
-> for the datasets marked complete; everything else is listed under
-> [Roadmap](#roadmap).
+> Status: all experiments complete (roadmap below); paper in preparation.
+
+**Summary of findings**
+1. The published D-GCAN training code cannot learn (BBBP test AUC 0.466); a
+   one-line loss fix restores learning (0.640 on BBBP, 0.79–0.84 elsewhere).
+2. Scaffold splits are much harder than random splits (up to +0.25 AUC for
+   random on BBBP); scaffold test molecules are less similar to training data.
+3. Untuned standard GNNs (GCN, GAT, GraphSAGE) beat the fixed D-GCAN on BBBP
+   and match it on BACE.
+4. No single D-GCAN component is essential; replacing its Weisfeiler–Lehman
+   fingerprints with plain atom types *improves* BBBP (0.640 → 0.695).
+5. D-GCAN's attention weights are not faithful explanations; per-atom occlusion
+   is, and gives chemically sensible case studies.
 
 ---
 
@@ -76,6 +86,74 @@ Notes:
 
 ---
 
+## Random vs. scaffold split
+
+Same molecules, same split sizes, only the assignment changes
+(`prepare_random_split.py`, `train_dataset_v10.py`); similarity = mean Tanimoto
+(ECFP4) of each test molecule to its nearest training molecule
+(`train_dataset_v11.py`). Table: `results/split_comparison_v10.csv`.
+
+| Dataset | Scaffold AUC | Random AUC | Δ (Welch p) | Test→train similarity (scaffold / random) |
+|---|---|---|---|---|
+| BBBP | 0.640 ± 0.012 | 0.887 ± 0.011 | +0.247 (<1e-4) | 0.415 / 0.576 |
+| BACE | 0.794 ± 0.019 | 0.880 ± 0.006 | +0.086 (3e-4) | 0.565 / 0.793 |
+| ClinTox | 0.842 ± 0.029 | 0.783 ± 0.026 | −0.059 (0.009) | 0.359 / 0.483 |
+| Tox21 | 0.806 ± 0.014 | 0.909 ± 0.015 | +0.103 (<1e-4) | 0.406 / 0.572 |
+
+Scaffold test sets are less similar to training on every dataset, and the random
+split scores higher on 3 of 4. ClinTox reverses, plausibly because it has very
+few positives (10–15 per test set) and clinical-toxicity labels depend on more
+than structure.
+
+## Architecture comparison
+
+GCN / GAT / GraphSAGE baselines (`train_dataset_v12.py`, PyTorch Geometric,
+standard untuned settings) on the identical scaffold splits and protocol.
+Table: `results/architecture_comparison_v12.csv`.
+
+| Model | BBBP AUC (p vs D-GCAN) | BACE AUC (p vs D-GCAN) |
+|---|---|---|
+| D-GCAN (fixed) | 0.640 ± 0.012 | 0.794 ± 0.019 |
+| GCN | 0.701 ± 0.043 (0.031) | 0.819 ± 0.012 (0.044) |
+| GAT | 0.680 ± 0.019 (0.006) | 0.811 ± 0.011 (0.136) |
+| GraphSAGE | 0.692 ± 0.007 (0.0001) | 0.797 ± 0.012 (0.742) |
+
+## Ablations
+
+Each variant removes one D-GCAN component (`train_dataset_v13.py`).
+Table: `results/ablation_v13.csv`.
+
+| Variant | BBBP AUC (p vs full) | BACE AUC (p vs full) |
+|---|---|---|
+| Full D-GCAN | 0.640 ± 0.012 | 0.794 ± 0.019 |
+| no GCN layers | 0.667 ± 0.019 (0.033) | 0.774 ± 0.039 (0.355) |
+| no GAT block | 0.656 ± 0.017 (0.127) | 0.787 ± 0.026 (0.630) |
+| uniform attention | 0.636 ± 0.013 (0.642) | 0.784 ± 0.022 (0.484) |
+| atom types instead of WL fingerprints | **0.695 ± 0.013 (1e-4)** | 0.811 ± 0.014 (0.147) |
+
+"no GAT block" and "uniform attention" ran on CPU (free GPU quota exhausted);
+a CPU/GPU check on the same variant agreed within seed spread.
+
+## Explainability
+
+Per-atom occlusion and GAT attention for the trained BBBP / BACE models
+(`train_dataset_v14.py`). Faithfulness test: delete each method's top-3 atoms
+and compare the change in prediction with deleting 3 random atoms.
+
+| | BBBP mean \|Δp\| | beats random | BACE mean \|Δp\| | beats random |
+|---|---|---|---|---|
+| Occlusion | 0.175 | 86% | 0.299 | 89% |
+| GAT attention | 0.058 | 64% | 0.048 | 26% |
+| Random 3 atoms | 0.040 | — | 0.062 | — |
+
+![BBBP occlusion case studies](results/explain_v14_BBBP.png)
+
+Red atoms support the positive prediction, blue oppose it: e.g. sucrose's
+hydroxyl groups argue against blood–brain barrier penetration, and diazepam's
+chlorine for it.
+
+---
+
 ## Demo: predict a molecule
 
 Web app (runs locally): `streamlit run app.py` → http://localhost:8501
@@ -96,6 +174,7 @@ See [DEMO.md](DEMO.md) for a full walkthrough.
 datasets/
   raw/          MoleculeNet CSVs (BBBP, BACE, ClinTox, Tox21)
   processed/    cleaned data + scaffold splits ({DATASET}_train/valid/test.txt)
+                random/ — random splits of the same molecules
 experiments/
   prepare_dataset.py   cleaning + scaffold split for BACE / ClinTox / Tox21
   train_dataset_v1.py  original pipeline (reproduces the bug; frozen baseline)
@@ -107,6 +186,12 @@ experiments/
   train_dataset_v7.py  dropout / weight-decay sweep
   train_dataset_v8.py  5-seed BBBP baseline (official BBBP number)
   train_dataset_v9.py  5-seed baseline for BACE / ClinTox / Tox21
+  prepare_random_split.py  random split with the same molecules and sizes
+  train_dataset_v10.py random-split runs (all four datasets)
+  train_dataset_v11.py train/test structural similarity, both splits
+  train_dataset_v12.py GCN / GAT / GraphSAGE baselines (PyTorch Geometric)
+  train_dataset_v13.py D-GCAN ablations
+  train_dataset_v14.py explainability: occlusion vs attention, case studies
   demo_predict.py      predict any SMILES with a trained checkpoint (CPU)
 models/         trained checkpoints (.pth)
 results/        per-run CSVs, training logs, predictions and diagnostic plots
@@ -123,10 +208,11 @@ it.
 ## Reproducing
 
 Requirements: Python 3.10+, `torch`, `rdkit`, `pandas`, `scikit-learn`,
-`matplotlib`; `deepchem` (+ `tensorflow`) only for `prepare_dataset.py`.
+`matplotlib`, `scipy`, `torch_geometric` (v12 only), `streamlit` (app only);
+`deepchem` (+ `tensorflow`) only for `prepare_dataset.py`.
 
 ```bash
-pip install torch rdkit pandas scikit-learn matplotlib
+pip install -r requirements.txt
 git clone https://github.com/JinYSun/D-GCAN.git vendor/D-GCAN   # upstream model code
 ```
 
@@ -134,9 +220,12 @@ git clone https://github.com/JinYSun/D-GCAN.git vendor/D-GCAN   # upstream model
   relative to the repo and import D-GCAN from `vendor/D-GCAN/DGCAN`. On a
   machine without CUDA, set `preprocess.device = torch.device('cpu')` after
   import (upstream hard-codes `cuda`).
-- GPU scripts (`v5`, `v7`, `v8`, `v9`) are written for a Colab VM (`/content/...`
-  paths) and clone the upstream repo automatically. For `v9`, set
-  `DATASET_OVERRIDE = "BACE"` (or `"ClinTox"` / `"Tox21"`) in the kernel first.
+- GPU scripts (`v5`, `v7`–`v10`, `v13`) are written for a Colab VM
+  (`/content/...` paths) and clone the upstream repo automatically. Set
+  `DATASET_OVERRIDE = "BACE"` (and for v13 optionally `ABLATIONS_OVERRIDE`) in
+  the kernel first. v12–v14 also run locally (v12 and v14 on CPU in minutes).
+- `utils/colab/refresh_token.py` renews the Colab CLI's 1-hour proxy token for
+  long runs.
 - `v1` (and the earlier drafts `train_dataset.py`, `train_bbbp.py`) are the
   original Colab notebooks' code, kept unchanged for reference; they expect the
   project on a mounted Google Drive at `/content/drive/MyDrive/DGCAN_Project`.
@@ -152,10 +241,11 @@ on a T4 GPU.
 - [x] Multi-seed BBBP baseline
 - [x] BACE, ClinTox multi-seed baselines
 - [x] Tox21 (SR-MMP) multi-seed baseline
-- [ ] Random vs. scaffold split comparison
-- [ ] Architecture comparison (GCN / GAT / GraphSAGE / D-GCAN)
-- [ ] Ablations (GCN, GAT, fingerprint and attention components)
-- [ ] Explainability (GNNExplainer / attention case studies)
+- [x] Random vs. scaffold split comparison (all four datasets)
+- [x] Architecture comparison (GCN / GAT / GraphSAGE / D-GCAN; BBBP, BACE)
+- [x] Ablations (GCN, GAT, fingerprint and attention components; BBBP, BACE)
+- [x] Explainability (occlusion vs. attention, case studies; BBBP, BACE)
+- [ ] Paper write-up
 
 ---
 
