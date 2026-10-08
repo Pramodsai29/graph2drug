@@ -196,10 +196,11 @@ random and balanced scaffold 80/10/10 splits; Welch p vs. the full model):
 |---|---|---|
 | Full D-GCAN | 0.951 ± 0.007 | 0.943 ± 0.002 |
 | No attention ("GCNN") | 0.952 ± 0.005 (p = 0.95) | 0.931 ± 0.010 (p = 0.16) |
-| No graph convolution ("GAT") | 0.918 ± 0.007 (p = 0.004) | pending |
+| No graph convolution ("GAT") | 0.918 ± 0.007 (p = 0.004) | 0.922 ± 0.005 (p = 0.009) |
 
 The paper credits graph convolution with +6.1% accuracy and attention with
-+4.0%. On its own data the convolution claim is supported; the attention claim
++4.0%. On its own data the convolution claim is supported on both splits (removing it
+costs 0.02–0.03 AUC and 10 accuracy points at the 0.15 threshold); the attention claim
 is not — AUC is unchanged, and the accuracy gap (0.872 vs. 0.840 at the 0.15
 threshold, p = 0.40) reverses at a 0.5 threshold. The standard largest-first
 scaffold split is degenerate on this dataset (validation and test end up 100%
@@ -312,7 +313,6 @@ on a T4 GPU.
 - [x] GNNExplainer + scaffold-shortcut analysis
 - [x] SHAP atom attributions
 - [x] Original paper re-tested on its own data (protocol + ablation)
-- [ ] Ablation: no graph convolution, scaffold split (one GPU run)
 - [ ] Paper write-up
 
 ---

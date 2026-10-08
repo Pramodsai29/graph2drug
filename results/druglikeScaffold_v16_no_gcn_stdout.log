@@ -1,0 +1,17 @@
+
+[colab] A new version of Colab CLI is available: 0.7.4 (current: 0.6.0)
+[colab] Run 'colab update' to update.
+[colab] To silence this check, set "enable_update_check": false in ~/.config/colab-cli/settings.json
+
+======================================================================
+D-GCAN v16 paper-ablation replication — druglikeScaffold | no_gcn | device cuda
+======================================================================
+/content/datasets/processed/druglikeScaffold_train.txt
+/content/datasets/processed/druglikeScaffold_valid.txt
+/content/datasets/processed/druglikeScaffold_test.txt
+
+[no_gcn] radius=1 | fingerprint vocab=511 | train/valid/test = 3383/423/421
+  -> no_gcn seed 42: best_valid_auc=0.8660 (epoch 74) | test_auc=0.9190 | test_mcc=0.5416 | time=15.54 min
+  -> no_gcn seed 43: best_valid_auc=0.8807 (epoch 118) | test_auc=0.9277 | test_mcc=0.5582 | time=15.41 min
+  -> no_gcn seed 44: best_valid_auc=0.8744 (epoch 123) | test_auc=0.9206 | test_mcc=0.5755 | time=15.34 min
+no_gcn test_auc        : 0.9225 +/- 0.0046
