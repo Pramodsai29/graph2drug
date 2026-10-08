@@ -1,0 +1,89 @@
+
+=== BBBP: 183 test molecules ===
+  25/183 molecules, 1.4 min
+  50/183 molecules, 2.7 min
+  75/183 molecules, 5.4 min
+  100/183 molecules, 7.1 min
+  125/183 molecules, 8.5 min
+  150/183 molecules, 11.8 min
+  175/183 molecules, 13.2 min
+shap       |Δp| top-3 = 0.1466 (beats random on 85%) | scaffold enrichment = 0.93
+occlusion  |Δp| top-3 = 0.1748 (beats random on 86%) | scaffold enrichment = 0.96
+random     |Δp| = 0.0404 | Spearman(SHAP, occlusion) median 0.64 | max efficiency error 2.2e-16 | 13.7 min
+  Caffeine: top SHAP atoms C9(-), C13(+), C6(-)
+  Diazepam: top SHAP atoms C11(-), C4(-), C19(-)
+  Penicillin G: top SHAP atoms C1(-), C5(-), C20(-)
+  Sucrose: top SHAP atoms O8(-), O12(-), O20(-)
+
+=== BACE: 151 test molecules ===
+  25/151 molecules, 4.3 min
+  50/151 molecules, 7.7 min
+  75/151 molecules, 8.9 min
+  100/151 molecules, 11.0 min
+  125/151 molecules, 15.9 min
+  150/151 molecules, 19.1 min
+shap       |Δp| top-3 = 0.2955 (beats random on 92%) | scaffold enrichment = 1.06
+occlusion  |Δp| top-3 = 0.2985 (beats random on 89%) | scaffold enrichment = 1.00
+random     |Δp| = 0.0619 | Spearman(SHAP, occlusion) median 0.53 | max efficiency error 8.1e-05 | 19.1 min
+  Inhibitor A: top SHAP atoms C29(+), C1(+), C26(+)
+  Inhibitor B: top SHAP atoms C17(+), C15(+), N14(+)
+  Non-inhibitor A: top SHAP atoms C1(-), C3(-), N2(+)
+  Non-inhibitor B: top SHAP atoms N6(-), C18(-), C4(+)
+
+=== druglikeRandom: 426 test molecules ===
+  25/426 molecules, 2.0 min
+  50/426 molecules, 4.5 min
+  75/426 molecules, 6.9 min
+  100/426 molecules, 8.2 min
+  125/426 molecules, 9.3 min
+  150/426 molecules, 10.5 min
+  175/426 molecules, 13.0 min
+  200/426 molecules, 14.2 min
+  225/426 molecules, 16.7 min
+  250/426 molecules, 18.2 min
+  275/426 molecules, 19.9 min
+  300/426 molecules, 27.4 min
+  325/426 molecules, 28.7 min
+  350/426 molecules, 30.8 min
+  375/426 molecules, 32.3 min
+  400/426 molecules, 33.9 min
+  425/426 molecules, 35.2 min
+shap       |Δp| top-3 = 0.3300 (beats random on 71%) | scaffold enrichment = 1.02
+occlusion  |Δp| top-3 = 0.4397 (beats random on 90%) | scaffold enrichment = 1.00
+random     |Δp| = 0.0635 | Spearman(SHAP, occlusion) median 0.51 | max efficiency error 3.3e-16 | 35.2 min
+
+=== druglikeScaffold: 421 test molecules ===
+  25/421 molecules, 1.5 min
+  50/421 molecules, 2.6 min
+  75/421 molecules, 4.4 min
+  100/421 molecules, 5.9 min
+  125/421 molecules, 7.2 min
+  150/421 molecules, 10.2 min
+  175/421 molecules, 11.7 min
+  200/421 molecules, 13.0 min
+  225/421 molecules, 15.3 min
+  250/421 molecules, 16.7 min
+  275/421 molecules, 19.0 min
+  300/421 molecules, 20.4 min
+  325/421 molecules, 24.6 min
+  350/421 molecules, 25.9 min
+  375/421 molecules, 27.4 min
+  400/421 molecules, 28.8 min
+shap       |Δp| top-3 = 0.3646 (beats random on 75%) | scaffold enrichment = 1.04
+occlusion  |Δp| top-3 = 0.5590 (beats random on 93%) | scaffold enrichment = 0.98
+random     |Δp| = 0.0681 | Spearman(SHAP, occlusion) median 0.51 | max efficiency error 1.2e-06 | 30.6 min
+
+         dataset    method  mean_abs_dp_topk  beats_random_pct  scaffold_enrichment  spearman_shap_occlusion_median  n_molecules
+            BBBP      shap             0.147            85.246                0.934                           0.645          183
+            BBBP occlusion             0.175            85.792                0.957                           0.645          183
+            BBBP    random             0.040               NaN                  NaN                           0.645          183
+            BACE      shap             0.295            92.053                1.058                           0.526          151
+            BACE occlusion             0.298            88.742                1.004                           0.526          151
+            BACE    random             0.062               NaN                  NaN                           0.526          151
+  druglikeRandom      shap             0.330            71.362                1.023                           0.508          426
+  druglikeRandom occlusion             0.440            89.671                0.997                           0.508          426
+  druglikeRandom    random             0.063               NaN                  NaN                           0.508          426
+druglikeScaffold      shap             0.365            74.584                1.044                           0.509          421
+druglikeScaffold occlusion             0.559            92.874                0.985                           0.509          421
+druglikeScaffold    random             0.068               NaN                  NaN                           0.509          421
+V18 DONE

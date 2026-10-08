@@ -20,7 +20,7 @@ MoleculeNet benchmarks: **BBBP, BACE, ClinTox and Tox21**.
 4. No single D-GCAN component is essential; replacing its Weisfeiler–Lehman
    fingerprints with plain atom types *improves* BBBP (0.640 → 0.695).
 5. D-GCAN's attention weights are not faithful explanations; per-atom occlusion
-   and GNNExplainer are, and give chemically sensible case studies.
+   GNNExplainer and SHAP are, and give chemically sensible case studies.
 6. Re-running the paper's own ablation on its own data: the graph-convolution
    claim holds, the attention claim does not (no AUC difference).
 
@@ -140,8 +140,10 @@ a CPU/GPU check on the same variant agreed within seed spread.
 
 ## Explainability
 
-Per-atom occlusion, GNNExplainer (node-mask variant) and GAT attention for the
-trained BBBP / BACE models (`train_dataset_v14.py`, `v17.py`). Faithfulness test:
+Per-atom occlusion, GNNExplainer (node-mask variant), SHAP (KernelSHAP, atoms as
+players) and GAT attention for the trained BBBP / BACE models
+(`train_dataset_v14.py`, `v17.py`, `v18.py`). All methods remove an atom the same
+way (its embedding is zeroed). Faithfulness test:
 delete each method's top-3 atoms and compare the change in prediction with
 deleting 3 random atoms. Scaffold enrichment: share of the top-3 atoms on the
 Murcko scaffold relative to the scaffold's share of the molecule (1 = no
@@ -150,6 +152,7 @@ preference).
 | | BBBP mean \|Δp\| | beats random | scaffold enr. | BACE mean \|Δp\| | beats random | scaffold enr. |
 |---|---|---|---|---|---|---|
 | Occlusion | 0.175 | 86% | 0.96 | 0.298 | 89% | 1.00 |
+| SHAP | 0.147 | 85% | 0.93 | 0.295 | 92% | 1.06 |
 | GNNExplainer | 0.101 | 58% | 1.02 | 0.167 | 72% | 1.06 |
 | GAT attention | 0.058 | 64% | 0.46 | 0.048 | 26% | 0.29 |
 | Random 3 atoms | 0.040 | — | — | 0.062 | — | — |
@@ -159,6 +162,12 @@ preference).
 Red atoms support the positive prediction, blue oppose it: e.g. sucrose's
 hydroxyl groups argue against blood–brain barrier penetration, and diazepam's
 chlorine for it.
+
+![BBBP SHAP case studies](results/explain_v18_BBBP.png)
+
+SHAP spreads credit over atoms that only matter together: it marks all of
+sucrose's hydroxyls, where occlusion (one atom at a time) singles out three.
+Rank correlation with occlusion is moderate (median Spearman 0.51–0.64).
 
 ---
 
@@ -195,7 +204,7 @@ is not — AUC is unchanged, and the accuracy gap (0.872 vs. 0.840 at the 0.15
 threshold, p = 0.40) reverses at a 0.5 threshold. The standard largest-first
 scaffold split is degenerate on this dataset (validation and test end up 100%
 drugs, because the ZINC molecules share a few large scaffolds), so a balanced
-scaffold split is used. Occlusion and GNNExplainer show no atom-level scaffold
+scaffold split is used. Occlusion, GNNExplainer and SHAP show no atom-level scaffold
 preference on these models (enrichment ≈ 1.0).
 
 Results: `results/druglike_v15_runs.csv`, `results/paper_ablation_v16.csv`,
@@ -246,6 +255,7 @@ experiments/
   prepare_druglike_splits.py  random + balanced scaffold splits of the authors' data
   train_dataset_v16.py the paper's ablation on its own data
   train_dataset_v17.py GNNExplainer, faithfulness and scaffold enrichment
+  train_dataset_v18.py SHAP (KernelSHAP over atoms), same tests as v17
   demo_predict.py      predict any SMILES with a trained checkpoint (CPU)
 models/         trained checkpoints (.pth)
 results/        per-run CSVs, training logs, predictions and diagnostic plots
@@ -262,7 +272,7 @@ it.
 ## Reproducing
 
 Requirements: Python 3.10+, `torch`, `rdkit`, `pandas`, `scikit-learn`,
-`matplotlib`, `scipy`, `torch_geometric` (v12 only), `streamlit` (app only);
+`matplotlib`, `scipy`, `shap` (v18 only), `torch_geometric` (v12 only), `streamlit` (app only);
 `deepchem` (+ `tensorflow`) only for `prepare_dataset.py`.
 
 ```bash
@@ -277,7 +287,7 @@ git clone https://github.com/JinYSun/D-GCAN.git vendor/D-GCAN   # upstream model
 - GPU scripts (`v5`, `v7`–`v10`, `v13`, `v15`, `v16`) are written for a Colab VM
   (`/content/...` paths) and clone the upstream repo automatically. Set
   `DATASET_OVERRIDE = "BACE"` (and for v13/v16 optionally `ABLATIONS_OVERRIDE`) in
-  the kernel first. v12–v14 and v17 also run locally (v12, v14 and v17 on CPU in minutes).
+  the kernel first. v12–v14, v17 and v18 also run locally on CPU (v18 takes ~100 min).
 - `utils/colab/refresh_token.py` renews the Colab CLI's 1-hour proxy token for
   long runs.
 - `v1` (and the earlier drafts `train_dataset.py`, `train_bbbp.py`) are the
@@ -300,6 +310,7 @@ on a T4 GPU.
 - [x] Ablations (GCN, GAT, fingerprint and attention components; BBBP, BACE)
 - [x] Explainability (occlusion vs. attention, case studies; BBBP, BACE)
 - [x] GNNExplainer + scaffold-shortcut analysis
+- [x] SHAP atom attributions
 - [x] Original paper re-tested on its own data (protocol + ablation)
 - [ ] Ablation: no graph convolution, scaffold split (one GPU run)
 - [ ] Paper write-up

@@ -6,3 +6,4 @@ matplotlib
 streamlit
 scipy
 torch_geometric
+shap
