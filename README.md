@@ -9,8 +9,10 @@ MoleculeNet benchmarks: **BBBP, BACE, ClinTox and Tox21**.
 > Status: all experiments complete (roadmap below); paper in preparation.
 
 **Summary of findings**
-1. The published D-GCAN training code cannot learn (BBBP test AUC 0.466); a
-   one-line loss fix restores learning (0.640 on BBBP, 0.79–0.84 elsewhere).
+1. The published D-GCAN training code has a latent loss bug: on BBBP it cannot
+   learn (test AUC 0.466); a one-line fix restores learning (0.640 on BBBP,
+   0.79–0.84 elsewhere). On the authors' own drug-likeness data the bug is
+   harmless, so their published numbers reproduce.
 2. Scaffold splits are much harder than random splits (up to +0.25 AUC for
    random on BBBP); scaffold test molecules are less similar to training data.
 3. Untuned standard GNNs (GCN, GAT, GraphSAGE) beat the fixed D-GCAN on BBBP
@@ -18,11 +20,13 @@ MoleculeNet benchmarks: **BBBP, BACE, ClinTox and Tox21**.
 4. No single D-GCAN component is essential; replacing its Weisfeiler–Lehman
    fingerprints with plain atom types *improves* BBBP (0.640 → 0.695).
 5. D-GCAN's attention weights are not faithful explanations; per-atom occlusion
-   is, and gives chemically sensible case studies.
+   and GNNExplainer are, and give chemically sensible case studies.
+6. Re-running the paper's own ablation on its own data: the graph-convolution
+   claim holds, the attention claim does not (no AUC difference).
 
 ---
 
-## Key finding: the original D-GCAN classifier cannot learn
+## Key finding: the original D-GCAN classifier cannot learn on BBBP
 
 Training the upstream D-GCAN code on BBBP (scaffold split) gave a test AUC of
 **0.466** — no better than chance — with every molecule predicted positive.
@@ -136,21 +140,66 @@ a CPU/GPU check on the same variant agreed within seed spread.
 
 ## Explainability
 
-Per-atom occlusion and GAT attention for the trained BBBP / BACE models
-(`train_dataset_v14.py`). Faithfulness test: delete each method's top-3 atoms
-and compare the change in prediction with deleting 3 random atoms.
+Per-atom occlusion, GNNExplainer (node-mask variant) and GAT attention for the
+trained BBBP / BACE models (`train_dataset_v14.py`, `v17.py`). Faithfulness test:
+delete each method's top-3 atoms and compare the change in prediction with
+deleting 3 random atoms. Scaffold enrichment: share of the top-3 atoms on the
+Murcko scaffold relative to the scaffold's share of the molecule (1 = no
+preference).
 
-| | BBBP mean \|Δp\| | beats random | BACE mean \|Δp\| | beats random |
-|---|---|---|---|---|
-| Occlusion | 0.175 | 86% | 0.299 | 89% |
-| GAT attention | 0.058 | 64% | 0.048 | 26% |
-| Random 3 atoms | 0.040 | — | 0.062 | — |
+| | BBBP mean \|Δp\| | beats random | scaffold enr. | BACE mean \|Δp\| | beats random | scaffold enr. |
+|---|---|---|---|---|---|---|
+| Occlusion | 0.175 | 86% | 0.96 | 0.298 | 89% | 1.00 |
+| GNNExplainer | 0.101 | 58% | 1.02 | 0.167 | 72% | 1.06 |
+| GAT attention | 0.058 | 64% | 0.46 | 0.048 | 26% | 0.29 |
+| Random 3 atoms | 0.040 | — | — | 0.062 | — | — |
 
 ![BBBP occlusion case studies](results/explain_v14_BBBP.png)
 
 Red atoms support the positive prediction, blue oppose it: e.g. sucrose's
 hydroxyl groups argue against blood–brain barrier penetration, and diazepam's
 chlorine for it.
+
+---
+
+## Re-testing the original paper on its own data
+
+The D-GCAN paper (Sun et al., *Bioinformatics* 2022) reported drug-likeness
+results (FDA drugs vs. ZINC) from one random split and a single run, with no
+validation set, and an "AUC" computed from 0/1 predicted labels.
+
+**Authors' exact protocol, original vs. fixed code** (`train_dataset_v15.py`;
+their `data_train`/`data_test`, last-epoch model, seeds 0/42/43):
+
+| Code | Accuracy | Hard-label "AUC" | Score AUC |
+|---|---|---|---|
+| Original (bug) | 0.900 ± 0.008 | 0.900 | 0.942 ± 0.010 |
+| Fixed | 0.906 ± 0.008 | 0.906 | 0.960 ± 0.002 |
+
+(paper: accuracy 0.923, "AUC" 0.951). The bug does not break training on this
+balanced dataset — it is a latent, dataset-dependent defect.
+
+**The paper's ablation, with a validation set and 3 seeds**
+(`prepare_druglike_splits.py`, `train_dataset_v16.py`; 4266 unique molecules,
+random and balanced scaffold 80/10/10 splits; Welch p vs. the full model):
+
+| Variant (paper's name) | Random split AUC | Scaffold split AUC |
+|---|---|---|
+| Full D-GCAN | 0.951 ± 0.007 | 0.943 ± 0.002 |
+| No attention ("GCNN") | 0.952 ± 0.005 (p = 0.95) | 0.931 ± 0.010 (p = 0.16) |
+| No graph convolution ("GAT") | 0.918 ± 0.007 (p = 0.004) | pending |
+
+The paper credits graph convolution with +6.1% accuracy and attention with
++4.0%. On its own data the convolution claim is supported; the attention claim
+is not — AUC is unchanged, and the accuracy gap (0.872 vs. 0.840 at the 0.15
+threshold, p = 0.40) reverses at a 0.5 threshold. The standard largest-first
+scaffold split is degenerate on this dataset (validation and test end up 100%
+drugs, because the ZINC molecules share a few large scaffolds), so a balanced
+scaffold split is used. Occlusion and GNNExplainer show no atom-level scaffold
+preference on these models (enrichment ≈ 1.0).
+
+Results: `results/druglike_v15_runs.csv`, `results/paper_ablation_v16.csv`,
+`results/explain_v17_*`.
 
 ---
 
@@ -175,6 +224,7 @@ datasets/
   raw/          MoleculeNet CSVs (BBBP, BACE, ClinTox, Tox21)
   processed/    cleaned data + scaffold splits ({DATASET}_train/valid/test.txt)
                 random/ — random splits of the same molecules
+                druglike{Random,Scaffold}_* — splits of the D-GCAN authors' data
 experiments/
   prepare_dataset.py   cleaning + scaffold split for BACE / ClinTox / Tox21
   train_dataset_v1.py  original pipeline (reproduces the bug; frozen baseline)
@@ -192,6 +242,10 @@ experiments/
   train_dataset_v12.py GCN / GAT / GraphSAGE baselines (PyTorch Geometric)
   train_dataset_v13.py D-GCAN ablations
   train_dataset_v14.py explainability: occlusion vs attention, case studies
+  train_dataset_v15.py authors' drug-likeness protocol, original vs fixed code
+  prepare_druglike_splits.py  random + balanced scaffold splits of the authors' data
+  train_dataset_v16.py the paper's ablation on its own data
+  train_dataset_v17.py GNNExplainer, faithfulness and scaffold enrichment
   demo_predict.py      predict any SMILES with a trained checkpoint (CPU)
 models/         trained checkpoints (.pth)
 results/        per-run CSVs, training logs, predictions and diagnostic plots
@@ -220,10 +274,10 @@ git clone https://github.com/JinYSun/D-GCAN.git vendor/D-GCAN   # upstream model
   relative to the repo and import D-GCAN from `vendor/D-GCAN/DGCAN`. On a
   machine without CUDA, set `preprocess.device = torch.device('cpu')` after
   import (upstream hard-codes `cuda`).
-- GPU scripts (`v5`, `v7`–`v10`, `v13`) are written for a Colab VM
+- GPU scripts (`v5`, `v7`–`v10`, `v13`, `v15`, `v16`) are written for a Colab VM
   (`/content/...` paths) and clone the upstream repo automatically. Set
-  `DATASET_OVERRIDE = "BACE"` (and for v13 optionally `ABLATIONS_OVERRIDE`) in
-  the kernel first. v12–v14 also run locally (v12 and v14 on CPU in minutes).
+  `DATASET_OVERRIDE = "BACE"` (and for v13/v16 optionally `ABLATIONS_OVERRIDE`) in
+  the kernel first. v12–v14 and v17 also run locally (v12, v14 and v17 on CPU in minutes).
 - `utils/colab/refresh_token.py` renews the Colab CLI's 1-hour proxy token for
   long runs.
 - `v1` (and the earlier drafts `train_dataset.py`, `train_bbbp.py`) are the
@@ -245,6 +299,9 @@ on a T4 GPU.
 - [x] Architecture comparison (GCN / GAT / GraphSAGE / D-GCAN; BBBP, BACE)
 - [x] Ablations (GCN, GAT, fingerprint and attention components; BBBP, BACE)
 - [x] Explainability (occlusion vs. attention, case studies; BBBP, BACE)
+- [x] GNNExplainer + scaffold-shortcut analysis
+- [x] Original paper re-tested on its own data (protocol + ablation)
+- [ ] Ablation: no graph convolution, scaffold split (one GPU run)
 - [ ] Paper write-up
 
 ---

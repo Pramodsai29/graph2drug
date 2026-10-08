@@ -1,0 +1,12 @@
+D-GCAN v15 — authors' drug-likeness data | modes ['bug', 'fix'] | seeds [0, 42, 43] | 140 epochs | cuda
+  -> bug seed 0: acc=0.9089 | auc_hardlabel=0.9089 | auc_score=0.9529 | score_std=0.4961 | 19.1 min
+  -> bug seed 42: acc=0.8995 | auc_hardlabel=0.8995 | auc_score=0.9370 | score_std=0.4934 | 18.9 min
+  -> bug seed 43: acc=0.8925 | auc_hardlabel=0.8925 | auc_score=0.9348 | score_std=0.4981 | 19.0 min
+  -> fix seed 0: acc=0.8972 | auc_hardlabel=0.8972 | auc_score=0.9592 | score_std=0.4885 | 18.8 min
+  -> fix seed 42: acc=0.9112 | auc_hardlabel=0.9112 | auc_score=0.9622 | score_std=0.4823 | 18.9 min
+  -> fix seed 43: acc=0.9089 | auc_hardlabel=0.9089 | auc_score=0.9574 | score_std=0.4857 | 18.8 min
+         acc         auc_hardlabel         auc_score         score_std        
+mode                                                                          
+bug   0.9003  0.0082        0.9003  0.0082    0.9416  0.0098    0.4958  0.0024
+fix   0.9058  0.0075        0.9058  0.0075    0.9596  0.0024    0.4855  0.0031
+V15 DONE
