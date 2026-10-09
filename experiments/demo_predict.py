@@ -55,6 +55,13 @@ DATASETS = {
         "positive": "inhibits BACE-1 (Alzheimer's target)",
         "negative": "does not inhibit BACE-1",
     },
+    # the D-GCAN paper's own task (FDA drugs vs ZINC), v16 full model, random split
+    "druglikeRandom": {
+        "checkpoint": MODELS_DIR / "druglikeRandom_v16_full_seed42_best.pth",
+        "saved_predictions": RESULTS_DIR / "druglikeRandom_v16_full_seed42_test_predictions.csv",
+        "positive": "drug-like",
+        "negative": "not drug-like",
+    },
 }
 
 VOCAB_NAMES = ("atom_dict", "bond_dict", "fingerprint_dict", "edge_dict")

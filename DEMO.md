@@ -119,7 +119,49 @@ prints "invalid SMILES" instead of crashing.
 
 Then show the GitHub repo: https://github.com/Pramodsai29/graph2drug
 
+## 5. Demo of the newer work (if reviewers ask, ~6 min)
+
+Everything runs live in the same web app; nothing is a screenshot.
+
+**a) The paper's own task — 🔬 Predict → "Drug-likeness"**
+- Ibuprofen → drug-like (0.96). Scroll to **"Why?"**: the carboxylic acid group is red
+  (it supports the prediction).
+- "Test-set ZINC compound A" → not drug-like. *"This is the exact task the D-GCAN
+  paper evaluated; the model reproduces their accuracy."*
+
+**b) Explainability, live — 🔬 Predict → BBBP → Sucrose**
+- Occlusion (left) shows almost nothing: removing one hydroxyl changes p by only 0.006.
+- Click **Compute SHAP**: every hydroxyl turns blue (about −0.11 each).
+- *"Sugar has eight OH groups that stand in for each other. Removing one doesn't
+  matter, so one-at-a-time methods miss them. SHAP tests atoms in combination and
+  finds them. Chemically correct: polar OH groups stop molecules entering the brain."*
+
+**c) The findings — 🔎 Findings tab** (one click per finding; every number is
+read live from the results CSVs)
+1. Random vs scaffold split: a random split inflates BBBP from 0.64 to 0.89.
+2. Simple GNNs (GCN / GAT / GraphSAGE) beat D-GCAN on BBBP.
+3. Ablations: no component matters; removing fingerprints *improves* BBBP.
+4. **Re-testing the paper (main novelty).** Their numbers reproduce on their own data,
+   because the bug is harmless there. The convolution claim is confirmed (p < 0.01);
+   the attention claim is not. Their "AUC" was computed from 0/1 labels.
+5. Explanations: D-GCAN's attention is about 1× random (not faithful); occlusion and
+   SHAP are 2–7× random.
+
+**d) Proof it is the real model — ✅ Model check → Drug-likeness → Run check**
+- Re-scores all 426 test molecules and matches the reported AUC (0.952) exactly.
+
+**e) Code** — open `experiments/train_dataset_v16.py` (the ablation: `build_model`
+removes one component at a time) and `experiments/atom_explain.py` (occlusion + SHAP,
+about 40 lines).
+
 ## Likely questions
+
+- **"Is your project only finding a bug?"** No. Fix → evaluation on 4 datasets →
+  split, architecture and ablation studies → re-testing the original paper's claims →
+  checking explanations with three methods.
+- **"Why trust SHAP over attention?"** We tested them: delete the atoms each method
+  ranks highest. If the prediction moves, the explanation was real. Attention is no
+  better than deleting random atoms.
 
 - **Why is BBBP lower than BACE/ClinTox?** Scaffold splitting puts structurally novel
   molecules in the test set. BBBP's test molecules are measurably less similar to the

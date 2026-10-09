@@ -17,6 +17,7 @@ from rdkit.Chem import Descriptors, Draw, rdMolDescriptors
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "experiments"))
+import atom_explain as ax  # noqa: E402
 import demo_predict as dp  # noqa: E402
 
 RESULTS = ROOT / "results"
@@ -43,6 +44,18 @@ TASKS = {
             "Test-set inhibitor B": "CN(C(=O)CCc1cc2ccccc2nc1N)C1CCCCC1",
             "Test-set non-inhibitor A": "Nc1nc(CCc2ccc3cc[nH]c3c2)cc(=O)[nH]1",
             "Test-set non-inhibitor B": "CC[C@@H](CC(=O)NC1C2CC3CC(C2)CC1C3)n1c(N)nc2cc(Cl)ccc21",
+        },
+    },
+    "druglikeRandom": {
+        "short": "Drug-likeness",
+        "title": "Drug-likeness (the original D-GCAN paper's task)",
+        "question": "Does this molecule look like an approved drug, or like a random screening compound?",
+        "examples": {
+            "Ibuprofen (painkiller)": "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",
+            "Metformin (diabetes)": "CN(C)C(=N)N=C(N)N",
+            "Test-set ZINC compound A": "O=C(COc1ccccc1/C=C1\\N=C2CCCCCN2C1=O)N1CCCC1",
+            "Test-set ZINC compound B": "CCCCc1ccc(NC(=S)N2CCN(c3ccc(OC)cc3)CC2)cc1",
+            "Test-set ZINC compound C": "CC(C)Cc1ccc([C@H](C)NC(=O)CSc2nnc(N3CCCC3)s2)cc1",
         },
     },
 }
@@ -86,13 +99,13 @@ with st.sidebar:
     st.caption("Runs locally on CPU · trained checkpoints from the 140-epoch runs")
 
 st.title("Graph2Drug: Predicting Drug Properties from Molecular Graphs")
-tab_pred, tab_how, tab_res, tab_check = st.tabs(
-    ["🔬 Predict", "⚙️ How it works", "📊 Results", "✅ Model check"])
+tab_pred, tab_how, tab_res, tab_find, tab_check = st.tabs(
+    ["🔬 Predict", "⚙️ How it works", "📊 Results", "🔎 Findings", "✅ Model check"])
 
 # ---------------- Predict ----------------
 with tab_pred:
     task = st.radio("Prediction task", list(TASKS), horizontal=True,
-                    format_func=lambda k: f"{k} — {TASKS[k]['title']}")
+                    format_func=lambda k: f"{TASKS[k].get('short', k)} — {TASKS[k]['title']}")
     cfg = TASKS[task]
     st.write(f"**{cfg['question']}**")
 
@@ -121,7 +134,25 @@ with tab_pred:
             with b:
                 result_card(pred, p)
 
-    with st.expander(f"Compare all {task} example molecules"):
+            st.markdown("#### Why? — which atoms drove this prediction")
+            st.caption("Red atoms push the prediction towards *" + pred.cfg["positive"] + "*, blue atoms "
+                       "push it away. An atom is 'removed' by zeroing its features and re-running the model.")
+            e1, e2 = st.columns(2)
+            with e1:
+                _, occ = ax.occlusion(pred, smiles)
+                st.image(ax.draw(smiles, occ, "Occlusion (one atom at a time)"))
+                st.caption("Top atoms: " + ", ".join(f"{a}{i} ({v:+.3f})" for a, i, v in ax.top_atoms(smiles, occ)))
+            with e2:
+                if st.button("Compute SHAP (≈5 s)", key=f"shap_{task}_{smiles}"):
+                    with st.spinner("Estimating Shapley values over atoms…"):
+                        _, sv = ax.shap_values(pred, smiles)
+                    st.image(ax.draw(smiles, sv, "SHAP (atoms in all combinations)"))
+                    st.caption("Top atoms: " + ", ".join(f"{a}{i} ({v:+.3f})" for a, i, v in ax.top_atoms(smiles, sv)))
+                else:
+                    st.info("SHAP credits atoms that matter only together (e.g. several "
+                            "hydroxyl groups). Click to compute it live.")
+
+    with st.expander(f"Compare all {cfg.get('short', task)} example molecules"):
         pred = get_predictor(task)
         probs = pred.predict(list(cfg["examples"].values()))
         st.dataframe(pd.DataFrame([
@@ -203,12 +234,102 @@ with tab_res:
     st.markdown("**Original model's output (before the fix)** — every test molecule scored ≈ 1.0")
     st.image(str(RESULTS / "BBBP_v2_score_histogram.png"), width=520)
 
+# ---------------- Findings ----------------
+def table(df, fmt):
+    st.dataframe(df.style.format(fmt, na_rep="—"), hide_index=True, width="stretch")
+
+
+def p_fmt(p):
+    return "—" if pd.isna(p) else ("< 0.001" if p < 0.001 else f"{p:.3f}")
+
+
+with tab_find:
+    st.caption("Every number below is read live from the results files produced by the experiment "
+               "scripts (experiments/train_dataset_v*.py). AUC: 0.5 = guessing, 1.0 = perfect. "
+               "p < 0.05 = the difference is unlikely to be chance.")
+    section = st.radio("Finding", ["1 · Random vs scaffold split", "2 · Simple GNNs vs D-GCAN",
+                                   "3 · Which D-GCAN parts matter?", "4 · Re-testing the original paper",
+                                   "5 · Can we trust the explanations?"], horizontal=True)
+
+    if section.startswith("1"):
+        st.subheader("A random split makes the model look much better than it is")
+        d = pd.read_csv(RESULTS / "split_comparison_v10.csv")
+        table(pd.DataFrame({"Dataset": d.dataset,
+                            "Scaffold split AUC": d.scaffold_auc.map("{:.3f}".format) + " ± " + d.scaffold_std.map("{:.3f}".format),
+                            "Random split AUC": d.random_auc.map("{:.3f}".format) + " ± " + d.random_std.map("{:.3f}".format),
+                            "p": d.welch_p.map(p_fmt),
+                            "Test→train similarity (scaffold / random)": d.test_sim_scaffold.map("{:.2f}".format) + " / " + d.test_sim_random.map("{:.2f}".format)}), {})
+        st.markdown("A **scaffold split** puts molecules with new core structures in the test set — like a "
+                    "genuinely new drug. Test molecules are less similar to training, so it is the honest test. "
+                    "(ClinTox reverses: only 10–15 toxic molecules in its test set.)")
+        st.image(str(RESULTS / "split_novelty_v11.png"), width=700)
+
+    elif section.startswith("2"):
+        st.subheader("Untuned standard GNNs beat D-GCAN on BBBP and match it on BACE")
+        d = pd.read_csv(RESULTS / "architecture_comparison_v12.csv")
+        table(pd.DataFrame({"Dataset": d.dataset, "Model": d.model,
+                            "Test AUC": d.test_auc_mean.map("{:.3f}".format) + " ± " + d.test_auc_std.map("{:.3f}".format),
+                            "p vs D-GCAN": d.welch_p_vs_dgcan.map(p_fmt)}), {})
+
+    elif section.startswith("3"):
+        st.subheader("Removing a D-GCAN component barely changes the result")
+        d = pd.read_csv(RESULTS / "ablation_v13.csv")
+        names = {"full": "Full D-GCAN", "no_gcn": "No graph convolution", "no_gat": "No attention block",
+                 "uniform_attn": "Attention → plain average", "no_fp": "No fingerprints (atom types only)"}
+        table(pd.DataFrame({"Dataset": d.dataset, "Variant": d.variant.map(names),
+                            "Test AUC": d.test_auc_mean.map("{:.3f}".format) + " ± " + d.test_auc_std.map("{:.3f}".format),
+                            "p vs full": d.welch_p.map(p_fmt)}), {})
+        st.markdown("Only one change is significant, and it **improves** the model: plain atom types "
+                    "instead of D-GCAN's fingerprints on BBBP (0.640 → 0.695).")
+
+    elif section.startswith("4"):
+        st.subheader("Re-testing the D-GCAN paper on its own drug-likeness data")
+        st.markdown("**a) The authors' exact protocol, original vs fixed code** — 3 seeds")
+        v = pd.read_csv(RESULTS / "druglike_v15_runs.csv").groupby("mode")[["acc", "auc_hardlabel", "auc_score"]].agg(["mean", "std"])
+        table(pd.DataFrame({"Code": ["Original (bug)", "Fixed"],
+                            "Accuracy": [f"{v.loc[m, ('acc', 'mean')]:.3f} ± {v.loc[m, ('acc', 'std')]:.3f}" for m in ("bug", "fix")],
+                            "Their 'AUC' (from 0/1 labels)": [f"{v.loc[m, ('auc_hardlabel', 'mean')]:.3f}" for m in ("bug", "fix")],
+                            "Real AUC (from scores)": [f"{v.loc[m, ('auc_score', 'mean')]:.3f} ± {v.loc[m, ('auc_score', 'std')]:.3f}" for m in ("bug", "fix")]}), {})
+        st.markdown("Paper: accuracy 0.923, 'AUC' 0.951. On this balanced dataset the bug is **harmless** — their "
+                    "numbers reproduce. It only breaks training on data like BBBP: a hidden, data-dependent bug.")
+        st.markdown("**b) The paper's ablation claims, re-run with a validation set and 3 seeds**")
+        d = pd.read_csv(RESULTS / "paper_ablation_v16.csv")
+        table(pd.DataFrame({"Split": d.split, "Variant (paper's name)": d.paper_name,
+                            "Test AUC": d.test_auc_mean.map("{:.3f}".format) + " ± " + d.test_auc_std.map("{:.3f}".format),
+                            "p vs full": d.welch_p.map(p_fmt)}), {})
+        c1, c2 = st.columns(2)
+        c1.success("**Graph convolution (paper: +6.1%)** — confirmed. Removing it lowers AUC on both splits (p < 0.01).")
+        c2.error("**Attention (paper: +4.0%)** — not confirmed. No AUC difference on either split.")
+        st.caption("Also found: the original evaluation had no validation set, used a single run, and computed "
+                   "'AUC' from 0/1 predicted labels.")
+
+    else:
+        st.subheader("Faithfulness test: delete each method's top-3 atoms — does the prediction move?")
+        a = pd.read_csv(RESULTS / "explain_v17_summary.csv")
+        b = pd.read_csv(RESULTS / "explain_v18_summary.csv")
+        d = pd.concat([a, b[b.method == "shap"]])
+        d = d[d.method != "random"].merge(a[a.method == "random"][["dataset", "mean_abs_dp_topk"]],
+                                          on="dataset", suffixes=("", "_random"))
+        d["ratio"] = d.mean_abs_dp_topk / d.mean_abs_dp_topk_random
+        piv = d.pivot(index="method", columns="dataset", values="ratio")
+        piv = piv.reindex(["occlusion", "shap", "gnnexplainer", "attention"])[
+            ["BBBP", "BACE", "druglikeRandom", "druglikeScaffold"]]
+        piv.index = ["Occlusion", "SHAP", "GNNExplainer", "D-GCAN attention"]
+        piv.columns = ["BBBP", "BACE", "Drug-likeness (random)", "Drug-likeness (scaffold)"]
+        st.markdown("Prediction change relative to deleting 3 **random** atoms (1.0× = no better than random):")
+        st.dataframe(piv.style.format("{:.1f}×"), width="stretch")
+        st.markdown("D-GCAN's own attention weights are **not** a faithful explanation; occlusion and SHAP are. "
+                    "Scaffold enrichment ≈ 1 for the faithful methods: no sign the model just memorises core structures.")
+        st.image(str(RESULTS / "explain_v18_BBBP.png"), width="stretch")
+        st.caption("SHAP on BBBP — sucrose: every hydroxyl group (blue) argues against crossing into the brain.")
+
 # ---------------- Model check ----------------
 with tab_check:
     st.write("Re-scores the entire held-out test set from scratch with the saved checkpoint "
              "and compares against the AUC reported in our results files — showing the demo "
              "uses the real trained model.")
-    which = st.radio("Dataset", list(TASKS), horizontal=True, key="verify_ds")
+    which = st.radio("Dataset", list(TASKS), horizontal=True, key="verify_ds",
+                     format_func=lambda k: TASKS[k].get("short", k))
     if st.button("Run check", type="primary"):
         with st.spinner("Scoring test set…"):
             v = get_predictor(which).verify()
