@@ -31,7 +31,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATASET_DIR = PROJECT_ROOT / "datasets" / "processed"
 MODELS_DIR = PROJECT_ROOT / "models"
 RESULTS_DIR = PROJECT_ROOT / "results"
-sys.path.append(str(PROJECT_ROOT / "vendor" / "D-GCAN" / "DGCAN"))
+DGCAN_REPO = PROJECT_ROOT / "vendor" / "D-GCAN"
+if not (DGCAN_REPO / "DGCAN" / "DGCAN.py").exists():  # e.g. a fresh clone or the cloud deployment
+    import subprocess
+    subprocess.run(["git", "clone", "--depth", "1", "https://github.com/JinYSun/D-GCAN.git", str(DGCAN_REPO)],
+                   check=True)
+sys.path.append(str(DGCAN_REPO / "DGCAN"))
 
 import preprocess as pp
 from DGCAN import MolecularGraphNeuralNetwork

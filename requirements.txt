@@ -1,9 +1,12 @@
+# CPU build of PyTorch (smaller; also what the cloud deployment uses)
+--extra-index-url https://download.pytorch.org/whl/cpu
 torch
 rdkit
 scikit-learn
 pandas
 matplotlib
-streamlit
+streamlit>=1.45
+altair
 scipy
-torch_geometric
 shap
+torch_geometric

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4285f4"/><stop offset=".55" stop-color="#9b72cb"/><stop offset="1" stop-color="#d96570"/>
+    </linearGradient>
+  </defs>
+  <!-- conical (Erlenmeyer) flask -->
+  <path d="M12.47 31 L35.53 31 L39 37 A4 4 0 0 1 35.5 43 L12.5 43 A4 4 0 0 1 9 37 Z" fill="url(#g)"/>
+  <path d="M17 4 H31 M19 4 V18 L9 37 A4 4 0 0 0 12.5 43 H35.5 A4 4 0 0 0 39 37 L29 18 V4"
+        fill="none" stroke="url(#g)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- a small molecular graph in the liquid -->
+  <g stroke="#ffffff" stroke-width="1.5" stroke-linecap="round">
+    <path d="M18 38.5 L22.5 35 L27.5 37 L31 34.5 M22.5 35 L23 40.5"/>
+  </g>
+  <g fill="#ffffff">
+    <circle cx="18" cy="38.5" r="1.9"/><circle cx="22.5" cy="35" r="1.9"/><circle cx="27.5" cy="37" r="1.9"/>
+    <circle cx="31" cy="34.5" r="1.9"/><circle cx="23" cy="40.5" r="1.6"/>
+  </g>
+  <!-- bubbles -->
+  <circle cx="22" cy="25" r="1.7" fill="none" stroke="url(#g)" stroke-width="1.3"/>
+  <circle cx="26.5" cy="20.5" r="1.1" fill="url(#g)"/>
+</svg>

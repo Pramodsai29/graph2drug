@@ -1,13 +1,21 @@
-[theme]
-base = "light"
-primaryColor = "#2a78d6"
+# Two themes (Gemini light / dark). The ☀/☾ button in the app switches between them.
+[theme.light]
+primaryColor = "#0b57d0"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f4f9"
+textColor = "#1f1f1f"
+
+[theme.dark]
+primaryColor = "#a8c7fa"
+backgroundColor = "#131314"
+secondaryBackgroundColor = "#1e1f20"
+textColor = "#e3e3e3"
 
 [client]
 toolbarMode = "viewer"
 
 [server]
 headless = true
-address = "localhost"
 
 [browser]
 gatherUsageStats = false

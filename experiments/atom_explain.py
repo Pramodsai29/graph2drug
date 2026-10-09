@@ -57,17 +57,23 @@ def shap_values(predictor, smiles, nsamples="auto"):
     return _prob(model, vecs, adj), sv
 
 
-def draw(smiles, values, legend="", size=(460, 340)):
-    """PNG of the molecule, heavy atoms coloured red (+) / blue (−) by importance.
+def draw(smiles, values, legend="", size=(460, 340), dark=False, bg=(1.0, 1.0, 1.0)):
+    """PNG of the molecule, heavy atoms highlighted red (+) / blue (−); colour strength = |importance|
+    (semi-transparent, so it works on light and dark backgrounds).
     preprocess adds explicit H after the heavy atoms, so the first n values are the heavy atoms."""
     mol = Chem.MolFromSmiles(smiles)
     imp = np.asarray(values)[:mol.GetNumAtoms()]
     scale = max(np.abs(imp).max(), 1e-9)
-    colors = {i: ((1.0, float(1 - min(v / scale, 1)), float(1 - min(v / scale, 1))) if v > 0 else
-                  (float(1 - min(-v / scale, 1)), float(1 - min(-v / scale, 1)), 1.0))
-              for i, v in enumerate(imp)}
+    colors = {i: ((0.85, 0.2, 0.2, float(min(abs(v) / scale, 1))) if v > 0 else
+                  (0.2, 0.42, 0.95, float(min(abs(v) / scale, 1)))) for i, v in enumerate(imp)}
     d = rdMolDraw2D.MolDraw2DCairo(*size)
-    d.drawOptions().legendFontSize = 18
+    o = d.drawOptions()
+    if dark:
+        rdMolDraw2D.SetDarkMode(o)
+    o.setBackgroundColour(tuple(bg) + (1.0,))
+    o.legendFontSize = max(18, size[0] // 28)
+    o.bondLineWidth = max(2, size[0] // 300)
+    o.highlightRadius = 0.45
     rdMolDraw2D.PrepareAndDrawMolecule(d, mol, highlightAtoms=list(colors), highlightAtomColors=colors,
                                        highlightBonds=[], legend=legend)
     d.FinishDrawing()

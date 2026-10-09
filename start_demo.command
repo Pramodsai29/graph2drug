@@ -6,4 +6,4 @@ for v in .venv "$HOME/Documents/graph2drug/.venv"; do
   if "$v/bin/python" -c "import streamlit, shap" 2>/dev/null; then source "$v/bin/activate"; break; fi
 done
 (sleep 4 && open http://localhost:8501) &
-streamlit run app.py --server.port 8501
+streamlit run app.py --server.port 8501 --server.address localhost
