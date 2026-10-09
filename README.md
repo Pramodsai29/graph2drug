@@ -8,6 +8,8 @@ MoleculeNet benchmarks: **BBBP, BACE, ClinTox and Tox21**.
 
 > Status: all experiments complete (roadmap below); paper in preparation.
 
+**Live demo:** https://graph2drug.streamlit.app — predict and explain any molecule, and browse every finding.
+
 **Summary of findings**
 1. The published D-GCAN training code has a latent loss bug: on BBBP it cannot
    learn (test AUC 0.466); a one-line fix restores learning (0.640 on BBBP,
@@ -215,7 +217,7 @@ Results: `results/druglike_v15_runs.csv`, `results/paper_ablation_v16.csv`,
 
 ## Demo: predict a molecule
 
-Web app (runs locally): `streamlit run app.py` → http://localhost:8501
+Live: https://graph2drug.streamlit.app · locally: `streamlit run app.py` → http://localhost:8501
 
 ```bash
 python experiments/demo_predict.py --dataset BBBP --smiles "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"   # caffeine
